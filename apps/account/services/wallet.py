@@ -81,14 +81,11 @@ class WalletService:
             source = found_wallets.get(source_uuid)
             dest = found_wallets.get(dest_uuid)
 
-            if not source or not dest:
-                missing = [
-                    str(w_id)
-                    for w_id, wallet in [(source_id, source), (dest_id, dest)]
-                    if not wallet
-                ]
-                if missing:
-                    raise WalletNotFoundError(missing)
+            missing = [
+                str(w_id) for w_id, wallet in [(source_id, source), (dest_id, dest)] if not wallet
+            ]
+            if missing:
+                raise WalletNotFoundError(missing)
 
             source = found_wallets[source_uuid]
             dest = found_wallets[dest_uuid]
