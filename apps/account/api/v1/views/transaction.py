@@ -25,8 +25,8 @@ class TransactionViewSet(
     APIHandleExceptionMixin,
     AtomicCreateMixin,
     AtomicUpdateMixin,
-    ModelViewSet,
     CacheResponseMixin,
+    ModelViewSet,
 ):
     """
     ViewSet for the Transaction model providing standard CRUD operations

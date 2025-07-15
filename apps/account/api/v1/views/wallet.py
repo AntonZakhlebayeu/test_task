@@ -10,6 +10,7 @@ from rest_framework_json_api.views import ModelViewSet
 
 from apps.account.api.v1.serializers import (
     DepositRequestSerializer,
+    TransactionSerializer,
     TransferRequestSerializer,
     WalletCreateUpdateSerializer,
     WalletSerializer,
@@ -33,8 +34,8 @@ class WalletViewSet(
     APIHandleExceptionMixin,
     AtomicCreateMixin,
     AtomicUpdateMixin,
-    ModelViewSet,
     CacheResponseMixin,
+    ModelViewSet,
 ):
     """
     ViewSet for the Wallet model with JSON:API compliance.
@@ -91,7 +92,7 @@ class WalletViewSet(
 
     @extend_schema(
         request=DepositRequestSerializer,
-        responses={200: {"type": "object", "properties": {"detail": {"type": "string"}}}},
+        responses={200: TransactionSerializer},
         description="Deposit or withdraw funds on a specific wallet by amount.",
         methods=["POST"],
         tags=["account"],
@@ -99,22 +100,32 @@ class WalletViewSet(
     @action(detail=True, methods=["post"])
     def deposit(self, request, pk=None):
         amount = Decimal(request.data.get("amount"))
-        WalletService.apply_cash_flow(wallet_id=pk, amount=amount)
-        return Response({"detail": "Cash flow applied"}, status=status.HTTP_200_OK)
+        transaction = WalletService.apply_cash_flow(wallet_id=pk, amount=amount)
+        serializer = TransactionSerializer(
+            transaction, context={"message": "Wallet has been deposited"}
+        )
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(
         request=TransferRequestSerializer,
-        responses={200: {"type": "object", "properties": {"detail": {"type": "string"}}}},
+        responses={200: WalletSerializer(many=True)},
         description="Transfer funds between two wallets atomically.",
         methods=["POST"],
         tags=["account"],
     )
     @action(detail=False, methods=["post"])
     def transfer(self, request):
-        WalletService.transfer(
+        source, dest = WalletService.transfer(
             source_id=request.data["source_wallet"],
             dest_id=request.data["destination_wallet"],
             amount=Decimal(request.data["amount"]),
         )
-
-        return Response({"detail": "Transfer complete"}, status=status.HTTP_200_OK)
+        serializer = WalletSerializer([source, dest], many=True)
+        response_data = {
+            "data": serializer.data,
+            "message": "Transfer has been completed",
+        }
+        return Response(response_data, status=status.HTTP_200_OK)

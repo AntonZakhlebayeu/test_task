@@ -255,22 +255,17 @@ class CacheResponseMixin:
         - Be sure to invalidate or clear cache appropriately when data changes.
     """
 
-    cache_timeout = 60  # default cache timeout in seconds
+    cache_timeout = 60  # seconds
 
     def get_cache_timeout(self):
-        """
-        Returns the timeout duration for the cache in seconds.
-
-        Override this method to customize cache duration dynamically.
-
-        :return: int - timeout in seconds
-        """
         return self.cache_timeout
 
-    @method_decorator(cache_page(lambda self: self.get_cache_timeout()))
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        view = super().list
+        cached_view = cache_page(self.get_cache_timeout())(view)
+        return cached_view(request, *args, **kwargs)
 
-    @method_decorator(cache_page(lambda self: self.get_cache_timeout()))
     def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+        view = super().retrieve
+        cached_view = cache_page(self.get_cache_timeout())(view)
+        return cached_view(request, *args, **kwargs)

@@ -64,7 +64,7 @@ class TestWalletViewSet:
         }
         response = self.client.post(url, deposit_data, format="vnd.api+json")
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["detail"] == "Cash flow applied"
+        assert response.data["message"] == "Wallet has been deposited"
 
         withdraw_data = {
             "data": {
@@ -74,7 +74,7 @@ class TestWalletViewSet:
         }
         response = self.client.post(url, withdraw_data, format="vnd.api+json")
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["detail"] == "Cash flow applied"
+        assert response.data["message"] == "Wallet has been deposited"
 
     def test_transfer_between_wallets(self):
         deposit_url = f"/api/v1/account/wallets/{self.wallet1.id}/deposit/"
@@ -100,4 +100,4 @@ class TestWalletViewSet:
         }
         response = self.client.post(url, transfer_data, format="vnd.api+json")
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["detail"] == "Transfer complete"
+        assert response.data["message"] == "Transfer has been completed"

@@ -92,10 +92,21 @@ class TransactionSerializer(serializers.ModelSerializer):
         Defines the resource name as "transactions" for JSON:API routing.
     """
 
+    message = serializers.SerializerMethodField()
+
     class Meta:
         model = Transaction
-        fields = ("id", "wallet", "txid", "amount")
+        fields = ("id", "wallet", "txid", "amount", "message")
         read_only_fields = ("id",)
 
     class JSONAPIMeta:
         resource_name = "transactions"
+
+    def get_message(self, obj) -> str:
+        return self.context.get("message")
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if "message" not in self.context:
+            data.pop("message", None)
+        return data
