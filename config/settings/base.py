@@ -1,3 +1,4 @@
+import secrets
 from pathlib import Path
 
 from utils.env_config import get_env
@@ -6,9 +7,6 @@ from utils.env_config import get_env
 env = get_env()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-
-SECRET_KEY = env.get_str(var_name="DJANGO_SECRET_KEY", required=True)
 
 DEBUG = env.get_str(var_name="DJANGO_DEBUG", default="False", required=False).lower() in (
     "true",
@@ -21,6 +19,13 @@ TEST = env.get_str(var_name="DJANGO_TEST", default="False", required=False).lowe
     "1",
     "yes",
 )
+
+if TEST:
+    SECRET_KEY = "".join(
+        secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)") for i in range(50)
+    )
+else:
+    SECRET_KEY = env.get_str(var_name="DJANGO_SECRET_KEY", required=True)
 
 ALLOWED_HOSTS = env.get_list("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1", required=True)
 
