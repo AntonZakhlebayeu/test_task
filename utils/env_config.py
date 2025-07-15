@@ -78,7 +78,6 @@ class EnvConfig:
         """
         if var_name in self._cache:
             return self._cache[var_name]
-
         value = os.getenv(var_name, default)
         if required and (value is None or value == ""):
             raise ImproperlyConfigured(f"Set the {var_name} environment variable")

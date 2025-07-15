@@ -24,3 +24,11 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-yaml
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: bash -c "cd $(git rev-parse --show-toplevel) && poetry run pytest"
+        language: system
+        stages: [pre-push]

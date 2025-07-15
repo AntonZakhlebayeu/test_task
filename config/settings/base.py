@@ -16,6 +16,12 @@ DEBUG = env.get_str(var_name="DJANGO_DEBUG", default="False", required=False).lo
     "yes",
 )
 
+TEST = env.get_str(var_name="DJANGO_TEST", default="False", required=False).lower() in (
+    "true",
+    "1",
+    "yes",
+)
+
 ALLOWED_HOSTS = env.get_list("DJANGO_ALLOWED_HOSTS", default="localhost,127.0.0.1", required=True)
 
 
@@ -100,20 +106,21 @@ DATABASES = {
     }
 }
 
-REDIS_HOST = env.get_str("REDIS_HOST", default="redis")
-REDIS_PORT = env.get_int("REDIS_PORT", default=6379)
-REDIS_DB = env.get_int("REDIS_DB", default=1)
-REDIS_PASSWORD = env.get_str("REDIS_PASSWORD", default="", required=False)
+if not TEST:
+    REDIS_HOST = env.get_str("REDIS_HOST", default="redis")
+    REDIS_PORT = env.get_int("REDIS_PORT", default=6379)
+    REDIS_DB = env.get_int("REDIS_DB", default=1)
+    REDIS_PASSWORD = env.get_str("REDIS_PASSWORD", default="", required=False)
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
     }
-}
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
@@ -152,8 +159,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
-STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
