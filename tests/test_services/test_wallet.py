@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 
-from apps.account.exceptions import WalletNotFoundError
+from apps.account.exceptions import SameWalletException, WalletNotFoundError
 from apps.account.models import Transaction, Wallet
 from apps.account.services.wallet import WalletService
 from apps.common.exceptions import BalanceNegativeError, ValidationError
@@ -86,6 +86,16 @@ def test_transfer_insufficient_funds_raises():
     with pytest.raises(ValidationError):
         WalletService.transfer(
             source_id=str(source.id), dest_id=str(dest.id), amount=Decimal("10.00")
+        )
+
+
+@pytest.mark.django_db
+def test_transfer_to_the_same_wallet_raises():
+    source = Wallet.objects.create(label="Source")
+
+    with pytest.raises(SameWalletException):
+        WalletService.transfer(
+            source_id=str(source.id), dest_id=str(source.id), amount=Decimal("10.00")
         )
 
 

@@ -26,3 +26,21 @@ class WalletNotFoundError(APIException):
             }
 
         super().__init__(detail=detail, *args, **kwargs)
+
+
+class SameWalletException(APIException):
+    """
+    JSON:API-compliant exception raised when for transfers the same wallets are selected.
+
+    This exception is raised from the service layer and returns a 400 response.
+    """
+
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_code = "same_wallets_selected"
+
+    def __init__(self, *args, **kwargs):
+        detail = {
+            "detail": "Same wallets selected for transaction",
+        }
+
+        super().__init__(detail=detail, *args, **kwargs)

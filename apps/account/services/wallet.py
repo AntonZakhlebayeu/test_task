@@ -3,9 +3,7 @@ from uuid import UUID, uuid4
 
 from django.db import transaction as db_transaction
 
-from rest_framework.exceptions import NotFound
-
-from apps.account.exceptions import WalletNotFoundError
+from apps.account.exceptions import SameWalletException, WalletNotFoundError
 from apps.account.models import Wallet
 from apps.account.services.transaction import TransactionService
 from apps.common.exceptions import BalanceNegativeError
@@ -73,6 +71,9 @@ class WalletService:
         """
         if amount <= 0:
             raise BalanceNegativeError("Transfer amount must be positive")
+        if source_id == dest_id:
+            raise SameWalletException
+
         source_uuid = UUID(source_id)
         dest_uuid = UUID(dest_id)
         with db_transaction.atomic():
@@ -81,11 +82,11 @@ class WalletService:
             dest = found_wallets.get(dest_uuid)
 
             if not source or not dest:
-                missing = []
-                if not source:
-                    missing.append(str(source_id))
-                if not dest:
-                    missing.append(str(dest_id))
+                missing = [
+                    str(w_id)
+                    for w_id, wallet in [(source_id, source), (dest_id, dest)]
+                    if not wallet
+                ]
                 if missing:
                     raise WalletNotFoundError(missing)
 
