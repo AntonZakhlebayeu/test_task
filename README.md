@@ -47,6 +47,26 @@ echo "DJANGO_ADMIN_PASSWORD=super_secure_password" >> .env
 echo "DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1" >> .env
 ```
 
+### Set up pre-commit hook
+
+#### Code Quality Tools (via pre-commit)
+
+This project uses pre-commit for consistent formatting and linting:
+
+- black — code formatter
+
+- isort — import sorting
+
+- flake8 — linting
+
+- pytest — tests (in pre-push hook)
+
+#### Install hooks:
+
+```sh
+pre-commit install
+```
+
 #### Set up docker container
 
 ```bash
