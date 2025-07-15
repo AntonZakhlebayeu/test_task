@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -27,6 +28,9 @@ from apps.common.mixins import (
     CacheResponseMixin,
     SoftDeleteSafeObjectMixin,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class WalletViewSet(
@@ -68,11 +72,16 @@ class WalletViewSet(
     not_found_exception_class = WalletNotFoundError
 
     def get_cache_timeout(self):
+        timeout = None
         if self.action == "list":
-            return 20
+            timeout = 40
         elif self.action == "retrieve":
-            return 5
-        return super().get_cache_timeout()
+            timeout = 10
+        else:
+            timeout = super().get_cache_timeout()
+
+        logger.debug(f"Cache timeout for action '{self.action}': {timeout}")
+        return timeout
 
     @extend_schema(
         request=WalletCreateUpdateSerializer,
@@ -80,6 +89,7 @@ class WalletViewSet(
         description="Create a new wallet with JSON:API-compliant body",
     )
     def create(self, request, *args, **kwargs):
+        logger.info(f"Creating wallet with data: {request.data}")
         return super().create(request, *args, **kwargs)
 
     @extend_schema(
@@ -88,6 +98,7 @@ class WalletViewSet(
         description="Update existing wallet",
     )
     def partial_update(self, request, *args, **kwargs):
+        logger.info(f"Updating wallet with data: {request.data}")
         return super().partial_update(request, *args, **kwargs)
 
     @extend_schema(
@@ -100,9 +111,13 @@ class WalletViewSet(
     @action(detail=True, methods=["post"])
     def deposit(self, request, pk=None):
         amount = Decimal(request.data.get("amount"))
+        logger.info(f"Deposit request data: {request.data}")
         transaction = WalletService.apply_cash_flow(wallet_id=pk, amount=amount)
         serializer = TransactionSerializer(
             transaction, context={"message": "Wallet has been deposited"}
+        )
+        logger.info(
+            f"Deposit applied: transaction_id={transaction.id}, amount={transaction.amount}"
         )
         return Response(
             serializer.data,
@@ -118,11 +133,25 @@ class WalletViewSet(
     )
     @action(detail=False, methods=["post"])
     def transfer(self, request):
-        source, dest = WalletService.transfer(
-            source_id=request.data["source_wallet"],
-            dest_id=request.data["destination_wallet"],
-            amount=Decimal(request.data["amount"]),
+        source_wallet_id = request.data.get("source_wallet")
+        dest_wallet_id = request.data.get("destination_wallet")
+        amount = Decimal(request.data.get("amount"))
+
+        logger.info(
+            f"Transfer requested: source_wallet={source_wallet_id}, "
+            f"dest_wallet={dest_wallet_id}, amount={amount}"
         )
+        logger.info(f"Transfer request data: {request.data}")
+
+        source, dest = WalletService.transfer(
+            source_id=source_wallet_id,
+            dest_id=dest_wallet_id,
+            amount=amount,
+        )
+        logger.info(
+            f"Transfer completed: source_wallet_id={source.id}, dest_wallet_id={dest.id}, amount={amount}"
+        )
+
         serializer = WalletSerializer([source, dest], many=True)
         response_data = {
             "data": serializer.data,

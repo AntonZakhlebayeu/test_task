@@ -1,3 +1,5 @@
+import logging
+
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework.filters import OrderingFilter
@@ -18,6 +20,9 @@ from apps.common.mixins import (
     CacheResponseMixin,
     SoftDeleteSafeObjectMixin,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class TransactionViewSet(
@@ -57,11 +62,16 @@ class TransactionViewSet(
     not_found_exception_class = TransactionNotFoundError
 
     def get_cache_timeout(self):
+        timeout = None
         if self.action == "list":
-            return 40
+            timeout = 40
         elif self.action == "retrieve":
-            return 10
-        return super().get_cache_timeout()
+            timeout = 10
+        else:
+            timeout = super().get_cache_timeout()
+
+        logger.debug(f"Cache timeout for action '{self.action}': {timeout}")
+        return timeout
 
     @extend_schema(
         request=TransactionRequestSerializer,
@@ -69,7 +79,10 @@ class TransactionViewSet(
         description="Create a new transaction with JSON:API-compliant body",
     )
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        logger.info(f"Creating transaction with data: {request.data}")
+        response = super().create(request, *args, **kwargs)
+        logger.info(f"Transaction created with response status {response.status_code}")
+        return response
 
     @extend_schema(
         request=TransactionRequestSerializer,
@@ -77,4 +90,7 @@ class TransactionViewSet(
         description="Update existing transaction",
     )
     def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
+        logger.info(f"Partial update of transaction with data: {request.data}")
+        response = super().partial_update(request, *args, **kwargs)
+        logger.info(f"Transaction updated with response status {response.status_code}")
+        return response

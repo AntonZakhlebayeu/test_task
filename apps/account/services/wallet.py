@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from uuid import UUID, uuid4
 
@@ -7,6 +8,9 @@ from apps.account.exceptions import SameWalletException, WalletNotFoundError
 from apps.account.models import Wallet
 from apps.account.services.transaction import TransactionService
 from apps.common.exceptions import BalanceNegativeError
+
+
+logger = logging.getLogger(__name__)
 
 
 class WalletService:
@@ -39,18 +43,25 @@ class WalletService:
             BalanceNegativeError: If applying the amount results in negative balance.
             Wallet.DoesNotExist: If the wallet does not exist.
         """
+        logger.info(f"Applying cash flow: wallet_id={wallet_id}, amount={amount}")
+        logger.debug(f"Cash flow txid={txid}")
         with db_transaction.atomic():
             try:
                 wallet = Wallet.objects.select_for_update().get(id=wallet_id)
+                logger.debug(f"Locked wallet: {wallet}")
             except Wallet.DoesNotExist:
+                logger.error(f"Wallet not found: {wallet_id}")
                 raise WalletNotFoundError(wallet_id)
             cls._validate_balance(wallet, amount)
 
-            return TransactionService.create(
+            transaction = TransactionService.create(
                 wallet=wallet,
                 amount=amount,
                 txid=txid or uuid4().hex,
             )
+
+            logger.info(f"Deposit transaction created: id={transaction.id}")
+            return transaction
 
     @classmethod
     def transfer(cls, source_id: str, dest_id: str, amount: Decimal):
@@ -72,9 +83,12 @@ class WalletService:
             BalanceNegativeError: If amount is not positive or insufficient funds.
             NotFound: if one or both wallets not found
         """
+        logger.info(f"Initiating transfer: from={source_id} to={dest_id}, amount={amount}")
         if amount <= 0:
+            logger.error("Transfer amount must be positive")
             raise BalanceNegativeError("Transfer amount must be positive")
         if source_id == dest_id:
+            logger.error("Source and destination wallets are the same")
             raise SameWalletException
 
         source_uuid = UUID(source_id)
@@ -88,24 +102,26 @@ class WalletService:
                 str(w_id) for w_id, wallet in [(source_id, source), (dest_id, dest)] if not wallet
             ]
             if missing:
+                logger.error(f"Missing wallet(s): {missing}")
                 raise WalletNotFoundError(missing)
 
             source = found_wallets[source_uuid]
             dest = found_wallets[dest_uuid]
 
+            logger.debug(f"Locked wallets: source={source}, dest={dest}")
             cls._validate_balance(source, amount)
 
-            TransactionService.create(
+            out_tx = TransactionService.create(
                 wallet=source,
                 amount=amount.copy_negate(),
                 txid=uuid4().hex,
             )
-            TransactionService.create(
+            in_tx = TransactionService.create(
                 wallet=dest,
                 amount=amount,
                 txid=uuid4().hex,
             )
-
+            logger.info(f"Transfer complete: out_tx={out_tx.id}, in_tx={in_tx.id}")
             return source, dest
 
     @staticmethod
@@ -121,5 +137,11 @@ class WalletService:
             BalanceNegativeError: If the resulting balance would be negative.
         """
         new_balance = wallet.balance + delta
+        logger.info(
+            f"Validating wallet balance: current={wallet.balance}, delta={delta}, new={new_balance}"
+        )
         if new_balance < 0:
+            logger.error(
+                f"Balance would become negative for wallet_id={wallet.id}: {wallet.balance} + ({delta})"
+            )
             raise BalanceNegativeError("Insufficient wallet funds")

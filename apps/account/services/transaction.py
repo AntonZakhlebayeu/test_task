@@ -1,7 +1,11 @@
+import logging
 from decimal import Decimal
 from uuid import uuid4
 
 from apps.account.models import Transaction, Wallet
+
+
+logger = logging.getLogger(__name__)
 
 
 class TransactionService:
@@ -32,9 +36,19 @@ class TransactionService:
             ValidationError: If the transaction violates business constraints such as
                 wallet balance becoming negative (handled by model validation).
         """
+        generated_txid = txid or uuid4().hex
+
+        logger.info(
+            f"Creating transaction: wallet_id={wallet.id}, amount={amount}, txid={generated_txid}"
+        )
+        logger.debug(f"Wallet before transaction: {wallet.__dict__}")
+
         tx = Transaction.objects.create(
             wallet=wallet,
-            txid=txid or uuid4().hex,
+            txid=generated_txid,
             amount=amount,
         )
+
+        logger.info(f"Transaction created: id={tx.id}, wallet_id={wallet.id}")
+        logger.debug(f"Transaction data: {tx.__dict__}")
         return tx
