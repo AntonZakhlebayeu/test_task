@@ -1,3 +1,5 @@
+import logging
+
 from django.core.cache import cache
 from django.db import connection
 
@@ -7,6 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.healthcheck.api.v1.serializers import HealthCheckSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class HealthCheckView(APIView):
@@ -30,7 +35,8 @@ class HealthCheckView(APIView):
             if cache.get("healthcheck") != "ok":
                 raise Exception("Redis did not return expected value")
         except Exception as e:
-            health["redis"] = f"error: {str(e)}"
+            logger.error(f"error: {str(e)}")
+            health["redis"] = "error: Postgres isn't healthy}"
 
         try:
             with connection.cursor() as cursor:
@@ -39,7 +45,8 @@ class HealthCheckView(APIView):
                 if result is None or result[0] != 1:
                     raise Exception("DB did not return 1")
         except Exception as e:
-            health["postgres"] = f"error: {str(e)}"
+            logger.error(f"error: {str(e)}")
+            health["postgres"] = "error: Redis isn't healthy"
 
         status_code = (
             status.HTTP_200_OK

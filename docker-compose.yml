@@ -19,8 +19,8 @@ services:
           "CMD-SHELL",
           "curl --fail http://localhost:${APPLICATION_PORT}/api/v1/healthcheck/healthz/ || exit 1",
         ]
-      interval: 3s
-      timeout: 5s
+      interval: 30s
+      timeout: 10s
       retries: 5
     restart: unless-stopped
 
