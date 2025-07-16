@@ -103,19 +103,19 @@ WSGI_APPLICATION = "config.wsgi.application"
 if not TEST:
     DATABASES = {
         "default": {
-            "ENGINE": env.get_str("DB_ENGINE", default="django.db.backends.postgresql"),
+            "ENGINE": env.get_str("DB_ENGINE"),
             "NAME": env.get_str("DB_NAME"),
             "USER": env.get_str("DB_USER"),
             "PASSWORD": env.get_str("DB_PASSWORD"),
-            "HOST": env.get_str("DB_HOST", default="localhost"),
-            "PORT": env.get_int("DB_PORT", default=5432),
+            "HOST": env.get_str("DB_HOST"),
+            "PORT": env.get_int("DB_PORT"),
         }
     }
 
-    REDIS_HOST = env.get_str("REDIS_HOST", default="redis")
-    REDIS_PORT = env.get_int("REDIS_PORT", default=6379)
-    REDIS_DB = env.get_int("REDIS_DB", default=1)
-    REDIS_PASSWORD = env.get_str("REDIS_PASSWORD", default="", required=False)
+    REDIS_HOST = env.get_str("REDIS_HOST")
+    REDIS_PORT = env.get_int("REDIS_PORT")
+    REDIS_DB = env.get_int("REDIS_DB")
+    REDIS_PASSWORD = env.get_str("REDIS_PASSWORD")
 
     CACHES = {
         "default": {
