@@ -79,9 +79,9 @@ class TransactionViewSet(
         description="Create a new transaction with JSON:API-compliant body",
     )
     def create(self, request, *args, **kwargs):
-        logger.info(f"Creating transaction with data: {request.data}")
+        txid = request.data.get("txid")
+        logger.info(f"Creating transaction with data: {txid}")
         response = super().create(request, *args, **kwargs)
-        logger.info(f"Transaction created with response status {response.status_code}")
         return response
 
     @extend_schema(
@@ -90,7 +90,7 @@ class TransactionViewSet(
         description="Update existing transaction",
     )
     def partial_update(self, request, *args, **kwargs):
-        logger.info(f"Partial update of transaction with data: {request.data}")
+        txid = request.data.get("txid")
+        logger.info(f"Partial update of transaction with data: {txid}")
         response = super().partial_update(request, *args, **kwargs)
-        logger.info(f"Transaction updated with response status {response.status_code}")
         return response

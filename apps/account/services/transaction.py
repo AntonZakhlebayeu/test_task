@@ -49,6 +49,6 @@ class TransactionService:
             amount=amount,
         )
 
-        logger.info(f"Transaction created: id={tx.id}, wallet_id={wallet.id}")
+        logger.info(f"Transaction created: id={tx.id}")
         logger.debug(f"Transaction data: {tx.__dict__}")
         return tx

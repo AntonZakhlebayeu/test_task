@@ -43,7 +43,7 @@ class WalletService:
             BalanceNegativeError: If applying the amount results in negative balance.
             Wallet.DoesNotExist: If the wallet does not exist.
         """
-        logger.info(f"Applying cash flow: wallet_id={wallet_id}, amount={amount}")
+        logger.info(f"Applying cash flow: amount={amount}")
         logger.debug(f"Cash flow txid={txid}")
         with db_transaction.atomic():
             try:
